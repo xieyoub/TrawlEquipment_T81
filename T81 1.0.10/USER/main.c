@@ -25,7 +25,7 @@ int main(void)
 	//Usart3_Init(9600); // 调试用
 	
 	time2_init();
-	Usart485_Init();
+	//Usart485_Init();
 	Switch_Init(); 
 	
 	//Dectect_GPIO_Config(); //三个插T800接口
