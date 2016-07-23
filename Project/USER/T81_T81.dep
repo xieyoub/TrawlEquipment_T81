@@ -1,5 +1,5 @@
 Dependencies for Project 'T81', Target 'T81': (DO NOT MODIFY !)
-F (.\main.c)(0x5792D2A6)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\USER -I..\CORE -I..\STM32F10x_FWLib\inc -I..\SYSTEM\delay -I..\SYSTEM\sys -I..\SYSTEM\usart -I..\HARDWARE\USART -I..\HARDWARE\4052 -I..\HARDWARE -I..\HARDWARE\timer-I D:\Keil\ARM\RV31\INC-I D:\Keil\ARM\CMSIS\Include-I D:\Keil\ARM\Inc\ST\STM32F10x-DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\obj\main.o --omf_browse ..\obj\main.crf --depend ..\obj\main.d)
+F (.\main.c)(0x57933B84)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\USER -I..\CORE -I..\STM32F10x_FWLib\inc -I..\SYSTEM\delay -I..\SYSTEM\sys -I..\SYSTEM\usart -I..\HARDWARE\USART -I..\HARDWARE\4052 -I..\HARDWARE -I..\HARDWARE\timer-I D:\Keil\ARM\RV31\INC-I D:\Keil\ARM\CMSIS\Include-I D:\Keil\ARM\Inc\ST\STM32F10x-DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\obj\main.o --omf_browse ..\obj\main.crf --depend ..\obj\main.d)
 I (main.h)(0x5786ED5A)
 I (stm32f10x.h)(0x4D783CB4)
 I (..\CORE\core_cm3.h)(0x4D523B58)
@@ -76,7 +76,7 @@ I (..\HARDWARE\4052\4052.h)(0x57503FF0)
 I (..\HARDWARE\dectection.h)(0x578389C3)
 I (..\HARDWARE\USART\usart3.h)(0x5736825C)
 I (..\HARDWARE\timer\timer.h)(0x57553839)
-F (..\HARDWARE\USART\usart2.c)(0x5792E89E)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\USER -I..\CORE -I..\STM32F10x_FWLib\inc -I..\SYSTEM\delay -I..\SYSTEM\sys -I..\SYSTEM\usart -I..\HARDWARE\USART -I..\HARDWARE\4052 -I..\HARDWARE -I..\HARDWARE\timer-I D:\Keil\ARM\RV31\INC-I D:\Keil\ARM\CMSIS\Include-I D:\Keil\ARM\Inc\ST\STM32F10x-DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\obj\usart2.o --omf_browse ..\obj\usart2.crf --depend ..\obj\usart2.d)
+F (..\HARDWARE\USART\usart2.c)(0x57933B84)(-c --cpu Cortex-M3 -g -O0 --apcs=interwork -I..\USER -I..\CORE -I..\STM32F10x_FWLib\inc -I..\SYSTEM\delay -I..\SYSTEM\sys -I..\SYSTEM\usart -I..\HARDWARE\USART -I..\HARDWARE\4052 -I..\HARDWARE -I..\HARDWARE\timer-I D:\Keil\ARM\RV31\INC-I D:\Keil\ARM\CMSIS\Include-I D:\Keil\ARM\Inc\ST\STM32F10x-DSTM32F10X_HD -DUSE_STDPERIPH_DRIVER-o ..\obj\usart2.o --omf_browse ..\obj\usart2.crf --depend ..\obj\usart2.d)
 I (..\HARDWARE\USART\usart2.h)(0x5786FE28)
 I (..\USER\main.h)(0x5786ED5A)
 I (..\USER\stm32f10x.h)(0x4D783CB4)

@@ -19,20 +19,11 @@ int main(void)
 {	
 	delay_init();
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
-	
 	Usart1_Init();//与T800通信
 	Usart2_Init();//与T88通信
-	//Usart3_Init(9600); // 调试用
-	
 	time2_init();
-	//Usart485_Init();
 	Switch_Init(); 
-	
-	//Dectect_GPIO_Config(); //三个插T800接口
-	//delay_ms(100);
 	T800Dectect(); // 检测T800IO配置
-	
-	//delay_ms(1000);
 	ReadInit();  //读取
 	while(1)
 	{

@@ -100,16 +100,10 @@ void Usart1_Init()
 {
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1|RCC_APB2Periph_GPIOA,ENABLE);
 	USART_DeInit(USART1);
-	
-	//USART1_DMA_Configuration();
 	USART1_NVIC_Configuration();
 	USART1_GPIO_Configuration();
 	USART1_MODE_Configuration();
-	
-	//USART_ITConfig(USART1,USART_IT_TC,DISABLE);    //禁止 
 	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);  //禁止 
-	//USART_ITConfig(USART1,USART_IT_IDLE,ENABLE);   //开启
-	//USART_DMACmd(USART1,USART_DMAReq_Rx,ENABLE);	//采用DMA方式接收  
  USART_Cmd(USART1, ENABLE);		
 }
 
@@ -229,15 +223,12 @@ void Com1GetData()
 																	MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
 																	break;
 											}
-											//Com2SendData();
-											//T800Decting();  
 										}
 									}
 									break;
 				}
 			}
 }
-
 
 /***********************************************************
  * 函数名: Com1SendData
@@ -257,7 +248,12 @@ void Com1SendData()
 		Usart1buf[i] = 0;
 }
 
-//CRC 校验
+/***********************************************************
+ * 函数名: msg_crc
+ * 描述  ：CRC校验
+ * 输入  : 无
+ * 输出  : 无
+ ***********************************************************/
 u16 msg_crc(u8 *ptr,u8 num)
 {
 	u16 crc=0xffff;
@@ -287,7 +283,12 @@ u16 msg_crc(u8 *ptr,u8 num)
 }
 
 
-//开机时读取
+/***********************************************************
+ * 函数名: ReadInit
+ * 描述  ：开机读取
+ * 输入  : 无
+ * 输出  : 无
+ ***********************************************************/
 void ReadInit()
 {
 	FirstReadFlag=1;
@@ -374,7 +375,6 @@ void FirstRead()
 			{
 				NetState[2] = 0;
 				FirstReadFlag = 0;
-				//T800Decting();
 			}
 		}
 		else if(Usart1buf[7] == 3)//右舷
@@ -383,7 +383,6 @@ void FirstRead()
 			NetState[2] = 1;
 			MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
 			FirstReadFlag = 0;
-			//T800Decting();
 		}
 }
 

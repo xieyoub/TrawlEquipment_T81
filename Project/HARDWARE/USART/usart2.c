@@ -207,10 +207,6 @@ void Com2GetData()
 									replyAsk();
 									break;
 				
-//				case 0x01: //检测是否插入T800
-//         T800Decting();
-//				     break;
-				
 				case 0x17: //打开串口
 									for(i=0;i<18;i++)
 										Usart1buf[i] = Usart2buf[i];
@@ -252,11 +248,6 @@ void Com2GetData()
 										OpenSerial();
 									}
 									break;
-				
-//				case 0x32: //读取
-//									Usart1Send();			
-//					    break;
-	
 				default:
 					   break;
 		 }
