@@ -10,7 +10,6 @@ void USART2_MODE_Configuration(void);
 void Com2GetData(void);
 void Com2SendData(void);
 void Usart1Send(void);
-void T800Decting(void);
 void OpenSerial(void);
 void ReadOffSet(void);
 void CloseSerial(void);

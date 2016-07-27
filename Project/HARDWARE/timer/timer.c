@@ -56,12 +56,9 @@ void TIM2_IRQHandler(void)
 			{
 				
 				TIM_Cmd(TIM2,DISABLE);
-				//T800Decting(); 
 			}
 			else  //第一次读取
 			{
-				//NetState[(Net_Sel-1)] = 2;
-
 				Net_Sel++;
 				if(Net_Sel<=3) //继续读取下一个
 				{
@@ -71,7 +68,6 @@ void TIM2_IRQHandler(void)
 				{
 					TIM_Cmd(TIM2,DISABLE);
 					FirstReadFlag = 0;
-					//T800Decting(); 
 				}
 				ReadTime = 0;
 			}

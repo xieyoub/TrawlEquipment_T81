@@ -143,45 +143,6 @@ void USART2_IRQHandler(void)
 	__nop();
 }
 
-/***********************************************************
- * 函数名: T800Decting
- * 描述  ：T800插入检测
- * 输入  : 无
- * 输出  : 无
- ***********************************************************/
-void T800Decting()
-{
-//	Usartbuf[0] = 0x24;
-//	Usartbuf[1] = 0x01;
-//	if(Left_Net != NetState[0])//故障
-//	{
-//		Usartbuf[2] = 2;
-//	}
-//	else
-//	{
-//		Usartbuf[2] = NetState[0]; //左舷状态
-//	}
-//	
-//	if(Tail_Net != NetState[1])
-//	{
-//		Usartbuf[3] = 2;
-//	}
-//	else
-//	{
-//		Usartbuf[3] = NetState[1]; //网尾状态
-//	}
-//	
-//	if(Right_Net != NetState[2])
-//	{
-//		Usartbuf[4] = 2;
-//	}
-//	else
-//	{
-//		Usartbuf[4] = NetState[2]; //右舷状态
-//	}
-
-//	Com2SendData(); //向T88发送T800插入的情况
-}
 
 
 /***********************************************************
@@ -207,53 +168,22 @@ void Com2GetData()
 									replyAsk();
 									break;
 				
-				case 0x17: //打开串口
-									for(i=0;i<18;i++)
-										Usart1buf[i] = Usart2buf[i];
-									Usart1Send();	
-									break;
-				
-				case 0x18: //关闭串口
-					    for(i=0;i<18;i++)
-										Usart1buf[i] = Usart2buf[i];
-									Usart1Send();			
-									break;
+				case 0x32://读取
+									
+					    break;
 				
 				case 0x31: //注入
-									if(ConnectDevices==1)
-									{
-										if(Usart2buf[8]==1)//插上时发注入命令
-										{
-											FirstWrite = 1;
-											TailOffset = ((Usart2buf[2])<<8)|Usart2buf[3];
-											location = Usart2buf[4];
-											LeftRightOffset = ((Usart2buf[5])<<8)|Usart2buf[6];
-											Net_Sel = Usart2buf[7];
-											OpenSerial();
-										}
-										else
-										{	
-											FirstWrite = 0;
-											for(i=0;i<18;i++)
-												Usart1buf[i] = Usart2buf[i];
-											Usart1Send();	
-										}
-									}
-					    else if(ConnectDevices==2)
-									{
-										TailOffset = ((Usart2buf[2])<<8)|Usart2buf[3];
-										location = Usart2buf[4];
-										LeftRightOffset = ((Usart2buf[5])<<8)|Usart2buf[6];
-										Net_Sel = Usart2buf[7];
-										OpenSerial();
-									}
+									TailOffset = ((Usart2buf[2])<<8)|Usart2buf[3];
+									location = Usart2buf[4];
+									LeftRightOffset = ((Usart2buf[5])<<8)|Usart2buf[6];
+									Net_Sel = Usart2buf[7];
+									OpenSerial();
 									break;
 				default:
 					   break;
 		 }
 	}
 }
-
 
 /***********************************************************
  * 函数名: Com2SendData

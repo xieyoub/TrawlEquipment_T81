@@ -150,84 +150,55 @@ void USART1_IRQHandler(void)
  ***********************************************************/
 void Com1GetData()
 {
-	u8 i;
-			if(Usart1buf[0] == 0x24)
+		if(Usart1buf[0] == 0x24)
+		{
+			switch (Usart1buf[1])
 			{
-				switch (Usart1buf[1])
-				{
-					case 0x17: //打开串口
-										if(ConnectDevices == 1) //T88
+				case 0x17: //打开串口
+									WriteOffset();
+									break;
+				
+				case 0x18: //关闭串口 //收到T800的回复后退出写码状态
+									Usart2buf[0] = 0x24;
+									Usart2buf[1] = 0x31;
+									Usart2buf[7] = Usart1buf[7];
+									Com2SendData();
+									break;
+				
+				case 0x31: //注入
+									CloseSerial();
+									break;
+				
+				case 0x32: //读取
+								{		
+									if(FirstReadFlag) //开机第一次读取
+									{
+										FirstRead();
+									}
+									else              
+									{
+										//判断收到的命令是哪个网位仪的
+										TIM_Cmd(TIM2,DISABLE);
+										switch (Usart1buf[7])
 										{
-											if(FirstWrite == 1)
-												WriteOffset();
-											else
-											{
-												for(i=0;i<18;i++)
-													Usart2buf[i] = Usart1buf[i];
-												Com2SendData();
-											}
-										}
-						    else if(ConnectDevices == 2) //T90
-										{
-											WriteOffset();
-										}
-										break;
-					
-					case 0x18: //关闭串口 //收到T800的回复后退出写码状态
-											for(i=0;i<18;i++)
-													Usart2buf[i] = Usart1buf[i];
-											Com2SendData();
-											FirstWrite = 0;
-										break;
-					
-					case 0x31: //注入
-										if(ConnectDevices==1)
-										{
-											if(FirstWrite == 1)
-												CloseSerial();
-											else
-											{
-												for(i=0;i<18;i++)
-													Usart2buf[i] = Usart1buf[i];
-												Com2SendData();
-											}
-										}
-										else if(ConnectDevices == 2)
-										{
-											CloseSerial();
-										}
-										break;
-					
-					case 0x32: //读取
-									{		
-										if(FirstReadFlag) //开机第一次读取
-										{
-											FirstRead();
-										}
-										else              
-										{
-											//判断收到的命令是哪个网位仪的
-											TIM_Cmd(TIM2,DISABLE);
-											switch (Usart1buf[7])
-											{
-												case 1:
-																	NetState[0] = 1;
-																	MMSI[0] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-																	break;
-												case 2:
-																	NetState[1] = 1;
-																	MMSI[1] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-																	break;
-												case 3:
-																	NetState[2] = 1;
-																	MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-																	break;
-											}
+											case 1:
+																NetState[0] = 1;
+																MMSI[0] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+																break;
+											case 2:
+																NetState[1] = 1;
+																MMSI[1] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+																break;
+											case 3:
+																NetState[2] = 1;
+																MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+																break;
 										}
 									}
-									break;
-				}
+								}
+								break;
 			}
+		}
 }
 
 /***********************************************************
@@ -356,7 +327,6 @@ void FirstRead()
 				NetState[1] = 0;
 				NetState[2] = 0;
 				FirstReadFlag = 0;
-				//T800Decting();
 			}
 		}
 		else if(Usart1buf[7] == 2)//船尾

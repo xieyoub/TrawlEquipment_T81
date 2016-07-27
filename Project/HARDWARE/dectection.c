@@ -85,7 +85,6 @@ void EXTI9_5_IRQHandler(void)
 		{
 			MMSI[0] = 0;
 			NetState[0] = 0;
-			//T800Decting();
 		}
 		EXTI_ClearITPendingBit(EXTI_Line7);
 	}
@@ -105,7 +104,6 @@ void EXTI9_5_IRQHandler(void)
 		{
 			MMSI[1] = 0;
 			NetState[1] = 0;
-			//T800Decting();
 		}
 		
 		EXTI_ClearITPendingBit(EXTI_Line6);
@@ -126,7 +124,6 @@ void EXTI9_5_IRQHandler(void)
 		{
 			MMSI[2] = 0;
 			NetState[2] = 0;
-			//T800Decting();
 		}
 		
 		//清除标志位
