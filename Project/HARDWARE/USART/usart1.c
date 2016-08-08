@@ -42,7 +42,7 @@ void USART1_NVIC_Configuration()
 	NVIC_InitTypeDef NVIC_InitStructure; 
 													
 	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;	  
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 1; 
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 2; 
 	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 0;	
 	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);		
@@ -154,6 +154,11 @@ void Com1GetData()
 		{
 			switch (Usart1buf[1])
 			{
+					case 0x06: //航速航向
+										SOG = Usart1buf[2]<<8|Usart1buf[3];
+					     COG = Usart1buf[4]<<8|Usart1buf[5];
+						    break;
+									
 				case 0x17: //打开串口
 									WriteOffset();
 									break;

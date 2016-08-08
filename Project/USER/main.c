@@ -9,6 +9,9 @@ u8 ReadTime = 0;        //读取次数
 u8 ConnectDevices=0;       //连接的终端设备 ，1：T88，2：T90
 u8 FirstWrite = 0;          //插入T800第一次注入
 u32 MMSI[3] = {0};      //左舷：MMSI[0] 网尾：MMSI[1] 右舷MMSI[2]
+u32 SOG=0,COG=0;           //航速，航向
+u32 sog_sample_interval=0;//航速采用间隔
+u32 cog_sample_len=0;     //航向平均化点数
 
 //t90
 u16 LeftRightOffset;

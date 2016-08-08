@@ -13,7 +13,7 @@
 
 void NVIC_Configuration(void);
 
-#define UART_LEN     20 
+#define UART_LEN     21 
 extern u8 Usart1buf[UART_LEN];  //串口1缓存
 extern u8 Usart2buf[UART_LEN];  //串口2缓存
 extern u8 FirstReadFlag;
@@ -27,5 +27,8 @@ extern u16 TailOffset;
 extern u8 location;
 extern u8 FirstWrite ;
 extern u32 MMSI[3];
+extern u32 SOG,COG;      
+extern u32 sog_sample_interval;//航速采用间隔
+extern u32 cog_sample_len;     //航向平均化点数
 
 #endif

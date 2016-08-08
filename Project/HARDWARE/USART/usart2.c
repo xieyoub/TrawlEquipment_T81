@@ -161,6 +161,7 @@ void Com2GetData()
 				case 0x5a: //T90终端握手命令
 									ConnectDevices = 2; 
 								 replyAsk();
+				     ReadSog_Cog();
 									break;
 				
 				case 0x58: //T88终端握手命令
@@ -177,6 +178,8 @@ void Com2GetData()
 									location = Usart2buf[4];
 									LeftRightOffset = ((Usart2buf[5])<<8)|Usart2buf[6];
 									Net_Sel = Usart2buf[7];
+				     sog_sample_interval = Usart2buf[8];
+			     	cog_sample_len = Usart2buf[9];
 									OpenSerial();
 									break;
 				default:
@@ -196,22 +199,37 @@ void Com2SendData()
 	u8 i;
 	u16 data;
 	
-	data = msg_crc(Usart2buf,16);	//CRC校验数据生成
-	Usart2buf[16] = data>>8;
-	Usart2buf[17] = data;
-	
 	Usart2_Output;
-	delay_ms(5);
-	for(i=0;i<18;i++)	
-	{
-		USART_SendData(USART2, Usart2buf[i]);
-		while (!(USART2->SR & USART_FLAG_TXE));
+	//delay_us(800);
+	delay_ms(1);
+	if(Usart2buf[1]==0x51) //握手命令长度21
+	{	
+	 data = msg_crc(Usart2buf,19);	//CRC校验数据生成
+		Usart2buf[19] = data>>8;
+ 	Usart2buf[20] = data;
+		for(i=0;i<21;i++)	
+		{
+			USART_SendData(USART2, Usart2buf[i]);
+			while (!(USART2->SR & USART_FLAG_TXE));
+		}
+	}
+	else
+	{	
+	 data = msg_crc(Usart2buf,16);	//CRC校验数据生成
+		Usart2buf[16] = data>>8;
+ 	Usart2buf[17] = data;
+		for(i=0;i<18;i++)	
+		{
+			USART_SendData(USART2, Usart2buf[i]);
+			while (!(USART2->SR & USART_FLAG_TXE));
+		}
 	}
  //BUF清空	
-	for(i=0;i<18;i++)
+	for(i=0;i<21;i++)
 		Usart2buf[i]=0;
 	
-	delay_ms(3);
+	//delay_us(800);
+	delay_ms(1);
 	Usart2_Receive;
 }
 
@@ -275,6 +293,8 @@ void WriteOffset(void)
 	Usart1buf[5] = LeftRightOffset>>8;
 	Usart1buf[6] = LeftRightOffset&0xff;
 	Usart1buf[7] = Net_Sel;
+	Usart1buf[8] = sog_sample_interval;
+	Usart1buf[9] = cog_sample_len;
 	Usart1Send();
 }
 //读取命令
@@ -326,6 +346,37 @@ void replyAsk(void)
 		//三个T800的状态
 		if(FirstReadFlag==0)
 			Usart2buf[14] = (NetState[0]<<6)|(NetState[1]<<4)|(NetState[2]<<2);
-	Com2SendData();
+		//航速航向
+		Usart2buf[15] = SOG>>8;
+		Usart2buf[16] = SOG;
+		Usart2buf[17] = COG>>8;
+		Usart2buf[18] = COG;
+	 Com2SendData();
 }
 
+void ReadSog_Cog(void)
+{
+	u8 i;
+	Usart1buf[0] = 0x24;
+ Usart1buf[1] = 0x06;
+	for(i=2;i<18;i++)
+	{
+		Usart1buf[i]=0;
+	}
+	
+ if(NetState[0]==1)
+	{
+	 Usart1buf[7]=1;	
+		Usart1Send();
+	}
+ else if(NetState[1]==1)
+	{
+		Usart1buf[7]=2;	
+		Usart1Send();
+	}
+ else if(NetState[2]==1)
+	{
+		Usart1buf[7]=3;	
+		Usart1Send();
+	}		
+}

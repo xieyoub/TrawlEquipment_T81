@@ -15,5 +15,6 @@ void ReadOffSet(void);
 void CloseSerial(void);
 void replyAsk(void);
 void WriteOffset(void);
-
+void ReadSog_Cog(void);
+	
 #endif
