@@ -460,6 +460,11 @@
               <FileType>1</FileType>
               <FilePath>..\HARDWARE\timer\timer.c</FilePath>
             </File>
+            <File>
+              <FileName>SogTransport.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\HARDWARE\SogTransport.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>

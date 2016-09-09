@@ -76,10 +76,11 @@ void EXTI9_5_IRQHandler(void)
 		delay_ms(1000); //等待T800稳定
 		if(Left_Net)//插入
 		{
-			Net_Sel = 1;
-			ReadOffSet();
-			Usart1Send();
-			tim2Enable();
+			NetState[0] = 1;
+//			Net_Sel = 1;
+//			ReadOffSet();
+//			Usart1Send();
+//			tim2Enable();
 		}
 		else  //拔出
 		{
@@ -95,10 +96,11 @@ void EXTI9_5_IRQHandler(void)
 		delay_ms(1000); //等待T800稳定
 		if(Tail_Net)//插入
 		{
-			Net_Sel = 2;
-			ReadOffSet();
-			Usart1Send();
-			tim2Enable();
+			NetState[1] = 1;
+//			Net_Sel = 2;
+//			ReadOffSet();
+//			Usart1Send();
+//			tim2Enable();
 		}	
 		else  //拔出
 		{
@@ -115,10 +117,11 @@ void EXTI9_5_IRQHandler(void)
 		delay_ms(1000); //等待T800稳定
 		if(Right_Net) //插入
 		{
-			Net_Sel = 3;
-			ReadOffSet();
-			Usart1Send();
-			tim2Enable();
+			NetState[2] = 1;
+//			Net_Sel = 3;
+//			ReadOffSet();
+//			Usart1Send();
+//			tim2Enable();
 		}		
 		else  //拔出
 		{

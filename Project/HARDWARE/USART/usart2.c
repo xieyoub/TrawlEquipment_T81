@@ -143,8 +143,6 @@ void USART2_IRQHandler(void)
 	__nop();
 }
 
-
-
 /***********************************************************
  * 函数名: Com2GetData
  * 描述  ：T88传过来的数据
@@ -174,13 +172,16 @@ void Com2GetData()
 					    break;
 				
 				case 0x31: //注入
-									TailOffset = ((Usart2buf[2])<<8)|Usart2buf[3];
-									location = Usart2buf[4];
-									LeftRightOffset = ((Usart2buf[5])<<8)|Usart2buf[6];
-									Net_Sel = Usart2buf[7];
-				     sog_sample_interval = Usart2buf[8];
-			     	cog_sample_len = Usart2buf[9];
-									OpenSerial();
+					   for(i=0;i<18;i++)
+				      Usart1buf[i] = Usart2buf[i];
+				     Usart1Send();
+//									TailOffset = ((Usart2buf[2])<<8)|Usart2buf[3];
+//									location = Usart2buf[4];
+//									LeftRightOffset = ((Usart2buf[5])<<8)|Usart2buf[6];
+//									Net_Sel = Usart2buf[7];
+//				     sog_sample_interval = Usart2buf[8];
+//			     	cog_sample_len = Usart2buf[9];
+//									OpenSerial();
 									break;
 				default:
 					   break;
@@ -279,24 +280,33 @@ void OpenSerial()
 	Usart1Send();
 }
 //注入
-void WriteOffset(void)
-{
-	u8 i;
-	for(i=0;i<18;i++)
-		Usart1buf[i] = 0;
-	
-	Usart1buf[0] = 0x24;
-	Usart1buf[1] = 0x31;
-	Usart1buf[2] = TailOffset>>8;
-	Usart1buf[3] = TailOffset&0xff;
-	Usart1buf[4] = location;
-	Usart1buf[5] = LeftRightOffset>>8;
-	Usart1buf[6] = LeftRightOffset&0xff;
-	Usart1buf[7] = Net_Sel;
-	Usart1buf[8] = sog_sample_interval;
-	Usart1buf[9] = cog_sample_len;
-	Usart1Send();
-}
+//void WriteOffset(void)
+//{
+//	u8 i;
+//	for(i=0;i<18;i++)
+//		Usart1buf[i] = 0;
+//	
+//	Usart1buf[0] = 0x24;
+//	Usart1buf[1] = 0x31;
+//	Usart1buf[2] = TailOffset>>8;
+//	Usart1buf[3] = TailOffset&0xff;
+//	Usart1buf[4] = location;
+//	Usart1buf[5] = LeftRightOffset>>8;
+//	Usart1buf[6] = LeftRightOffset&0xff;
+//	Usart1buf[7] = Net_Sel;
+//	Usart1buf[8] = sog_sample_interval;
+//	Usart1buf[9] = cog_sample_len;
+//	Usart1Send();
+//}
+
+//void WriteOffset()
+//{
+// u8 i;
+// for(i=0;i<18;i++)
+//  Usart1buf[i]=0;	
+//}
+
+
 //读取命令
 void ReadOffSet()
 {
@@ -347,6 +357,13 @@ void replyAsk(void)
 		if(FirstReadFlag==0)
 			Usart2buf[14] = (NetState[0]<<6)|(NetState[1]<<4)|(NetState[2]<<2);
 		//航速航向
+		if(NetState[0]!=0|NetState[1]!=0|NetState[1]!=0)
+			SogSel();
+		else
+		{
+			SOG = 0;
+		 COG = 0;
+		}
 		Usart2buf[15] = SOG>>8;
 		Usart2buf[16] = SOG;
 		Usart2buf[17] = COG>>8;
@@ -354,6 +371,8 @@ void replyAsk(void)
 	 Com2SendData();
 }
 
+//读取航速航向信息，如果有三次没收到串口的应答，则判断该网位仪故障
+//故障网位仪每个三秒进行一次读取判断，收到应答则判断该网位仪正常
 void ReadSog_Cog(void)
 {
 	u8 i;
@@ -364,19 +383,58 @@ void ReadSog_Cog(void)
 		Usart1buf[i]=0;
 	}
 	
- if(NetState[0]==1)
+ if(Left_Net)
 	{
-	 Usart1buf[7]=1;	
-		Usart1Send();
+	 if(NetState[0]==1 | faultCount[0]==3)
+	 {
+		 if(faultCount[0]==3)
+		 {
+			 faultCount[0]=0;
+			 NetState[0]=2;
+		 }
+		 faultCount[0]++;
+		 Usart1buf[7]=1;	
+		 Usart1Send();
+	 }
+	 else if(faultCount[0]<3)
+	 {
+		 faultCount[0]++;
+	 }
 	}
- else if(NetState[1]==1)
+ else if(Tail_Net)
 	{
-		Usart1buf[7]=2;	
-		Usart1Send();
+		if(NetState[1]==1 | faultCount[1]==3)
+		{
+			if(faultCount[1]==3)
+			{
+				faultCount[1]=0;
+				NetState[1] = 2;
+			}
+			faultCount[1]++;
+			Usart1buf[7]=2;	
+			Usart1Send();
+		}
+		else if(faultCount[1]<3)
+		{
+			faultCount[1]++;
+		}
 	}
- else if(NetState[2]==1)
+ else if(Right_Net)
 	{
-		Usart1buf[7]=3;	
-		Usart1Send();
+		if(NetState[2]==1 | faultCount[2]==3)
+		{
+			if(faultCount[2]==3)
+			{
+			 faultCount[2] = 0;
+		   NetState[2] = 2;
+			}
+			faultCount[2]++;
+			Usart1buf[7]=3;	
+			Usart1Send();
+		}
+		else if(faultCount[2]<3)
+		{
+			faultCount[2]++;
+		}
 	}		
 }

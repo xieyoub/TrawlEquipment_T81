@@ -12,6 +12,7 @@ u32 MMSI[3] = {0};      //左舷：MMSI[0] 网尾：MMSI[1] 右舷MMSI[2]
 u32 SOG=0,COG=0;           //航速，航向
 u32 sog_sample_interval=0;//航速采用间隔
 u32 cog_sample_len=0;     //航向平均化点数
+u32 faultCount[3];        //串口未接受到应答的次数
 
 //t90
 u16 LeftRightOffset;

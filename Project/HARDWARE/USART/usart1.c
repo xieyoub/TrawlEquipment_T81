@@ -17,7 +17,7 @@ void USART1_DMA_Configuration()
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)(&USART1->DR);//外设地址  
 	DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)Usart1buf;     //内存地址  
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;            //dma传输方向从外设到内存 
-	DMA_InitStructure.DMA_BufferSize = UART_LEN;               //设置DMA在传输时缓冲区的长度  
+	DMA_InitStructure.DMA_BufferSize = 20;               //设置DMA在传输时缓冲区的长度  
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;//设置DMA的外设地址不变 
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;      //设置DMA的内存递增模式  
 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;//外设数据字长 8位
@@ -101,46 +101,77 @@ void Usart1_Init()
 	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1|RCC_APB2Periph_GPIOA,ENABLE);
 	USART_DeInit(USART1);
 	USART1_NVIC_Configuration();
+	USART1_DMA_Configuration();
 	USART1_GPIO_Configuration();
 	USART1_MODE_Configuration();
-	USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);  //禁止 
+	//USART_ITConfig(USART1,USART_IT_RXNE,ENABLE);  //禁止 
+	USART_ITConfig(USART1,USART_IT_TC,DISABLE);    //禁止 
+	USART_ITConfig(USART1,USART_IT_IDLE,ENABLE);   //开启
+	USART_DMACmd(USART1,USART_DMAReq_Rx,ENABLE);	//采用DMA方式接收 
  USART_Cmd(USART1, ENABLE);		
 }
 
 
- /***********************************************************
- * 函数名: USART1_IRQHandler
- * 描述  ：配置串口1中断处理
- * 输入  : 无
- * 输出  : 无
- ***********************************************************/
-
 void USART1_IRQHandler(void)
-{
-	u8 Data;
-	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  
-	{
-		Data=USART1->DR; 
+{   
+	u8 i;
+	uint32_t Length = 0;//,i=0;
+	u16 crcdata,scrData; //校验生成的数据, 源校验的数据
+	if(USART_GetITStatus(USART1, USART_IT_IDLE) != RESET)  
+	{  
+		DMA_Cmd(DMA1_Channel5,DISABLE); 
+		Length = USART1->SR;  
+		Length = USART1->DR; //清USART_IT_IDLE标志
 		
-  if(Data==0x24)
-			ReceiveSta = 1;
-		//开始接收
-		if(ReceiveSta)
-		{			
-			Usart1buf[Uart1_Rx_Num] = Data;
-			Uart1_Rx_Num++;
-		}
+		scrData = (Usart1buf[16]<<8)+Usart1buf[17];
+		crcdata = msg_crc(Usart1buf,16); //数据校验
 		
-		//接收结束
-		if(Uart1_Rx_Num==18)
-		{
-			Uart1_Rx_Num = 0;
+		if(scrData == crcdata)
 			Com1GetData();
-			ReceiveSta = 0;
-		 USART_ClearITPendingBit(USART1,USART_IT_RXNE); //清楚标志位
-		}
+		for(i=0;i<18;i++)
+				Usart1buf[i] = 0;
+		
+		DMA1_Channel5->CNDTR = 20;//重装填,并让接收地址偏址从0开始
+		DMA_Cmd(DMA1_Channel5, ENABLE);//处理完,重开DMA   
+		
+		//USART_ClearITPendingBit(USART1,USART_IT_IDLE);
 	}
+	__nop();   	
+	
 }
+// /***********************************************************
+// * 函数名: USART1_IRQHandler
+// * 描述  ：配置串口1中断处理
+// * 输入  : 无
+// * 输出  : 无
+// ***********************************************************/
+
+//void USART1_IRQHandler(void)
+//{
+//	u8 Data;
+//	if(USART_GetITStatus(USART1, USART_IT_RXNE) != RESET)  
+//	{
+//		Data=USART1->DR; 
+//		
+//  if(Data==0x24)
+//			ReceiveSta = 1;
+//		//开始接收
+//		if(ReceiveSta)
+//		{			
+//			Usart1buf[Uart1_Rx_Num] = Data;
+//			Uart1_Rx_Num++;
+//		}
+//		
+//		//接收结束
+//		if(Uart1_Rx_Num==18)
+//		{
+//			Uart1_Rx_Num = 0;
+//			Com1GetData();
+//			ReceiveSta = 0;
+//		 USART_ClearITPendingBit(USART1,USART_IT_RXNE); //清楚标志位
+//		}
+//	}
+//}
 
 /***********************************************************
  * 函数名: Com1GetData
@@ -150,28 +181,120 @@ void USART1_IRQHandler(void)
  ***********************************************************/
 void Com1GetData()
 {
+	u8 i;
 		if(Usart1buf[0] == 0x24)
 		{
 			switch (Usart1buf[1])
 			{
 					case 0x06: //航速航向
-										SOG = Usart1buf[2]<<8|Usart1buf[3];
-					     COG = Usart1buf[4]<<8|Usart1buf[5];
+						    switch(Usart1buf[7])
+										{
+											case 1:
+																NetState[0] = 1;
+																faultCount[0] = 0;
+																SogData[0] = Usart1buf[2]<<8|Usart1buf[3];
+																CogData[0] = Usart1buf[4]<<8|Usart1buf[5];
+											     MMSI[0] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+																Usart1buf[0] = 0x24;
+																Usart1buf[1] = 0x06;
+																
+											      
+											      //收到左舷回复，请求网尾航速航向
+																if(Tail_Net)
+																{
+																	if(NetState[1]==1 | faultCount[1]==3)
+																	{
+																		if(faultCount[1]==3)
+																		{
+																			faultCount[1]=0;
+																			NetState[1] = 2;
+																		}
+																		Usart1buf[7] = 2;
+																		faultCount[1]++;
+																		Usart1Send();
+																	}
+																	else if(faultCount[1]<3)
+																	{
+																		faultCount[1]++;
+																	}
+																}
+																else if(Right_Net)//网尾未插入，请求右弦
+																{
+																	if(NetState[2]==1 | faultCount[2]==3)
+																	{
+																		if(faultCount[2]==3)
+																		{
+																			faultCount[2]=0;
+																			NetState[2] = 2;
+																		}
+																		Usart1buf[7] = 3;
+																		faultCount[2]++;
+																		Usart1Send();
+																	}
+																	else if(faultCount[2]<3)
+																	{
+																		faultCount[2]++;
+																	}
+																}	
+												    break;
+											
+											 case 2:
+																	NetState[1] = 1;
+																	faultCount[1] = 0;
+																	SogData[1] = Usart1buf[2]<<8|Usart1buf[3];
+																	CogData[1] = Usart1buf[4]<<8|Usart1buf[5];
+																	MMSI[1] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+																	Usart1buf[0] = 0x24;
+																	Usart1buf[1] = 0x06;
+																	
+															
+																	//收到网尾的回复，请求右弦航速航向
+																	if(Right_Net)
+																	{
+																		if(NetState[2]==1 | faultCount[2]==3)
+																		{
+																			if(faultCount[2]==3)
+																			{
+																				faultCount[2] = 0;
+																				NetState[2] = 2;
+																			}
+																			Usart1buf[7]=3;	
+																			faultCount[2]++;
+																			Usart1Send();
+																		}
+																		else if(faultCount[2]<3)
+																		{
+																			faultCount[2]++;
+																		}
+																	}	
+											      break;
+											
+											case 3:
+													  	NetState[2] = 1;
+												      faultCount[2] = 0;
+													  	SogData[2] = Usart1buf[2]<<8|Usart1buf[3];
+													  	CogData[2] = Usart1buf[4]<<8|Usart1buf[5];
+											     MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+												    break;
+										}
 						    break;
 									
-				case 0x17: //打开串口
-									WriteOffset();
-									break;
+//				case 0x17: //打开串口
+//									WriteOffset();
+//									break;
 				
-				case 0x18: //关闭串口 //收到T800的回复后退出写码状态
-									Usart2buf[0] = 0x24;
-									Usart2buf[1] = 0x31;
-									Usart2buf[7] = Usart1buf[7];
-									Com2SendData();
-									break;
+//				case 0x18: //关闭串口 //收到T800的回复后退出写码状态
+//									Usart2buf[0] = 0x24;
+//									Usart2buf[1] = 0x31;
+//									Usart2buf[7] = Usart1buf[7];
+//									Com2SendData();
+//									break;
 				
 				case 0x31: //注入
-									CloseSerial();
+					    for(i=0;i<18;i++)
+				      Usart2buf[i] = Usart1buf[i];
+				     Com2SendData();
+									//CloseSerial();
 									break;
 				
 				case 0x32: //读取
@@ -180,26 +303,26 @@ void Com1GetData()
 									{
 										FirstRead();
 									}
-									else              
-									{
-										//判断收到的命令是哪个网位仪的
-										TIM_Cmd(TIM2,DISABLE);
-										switch (Usart1buf[7])
-										{
-											case 1:
-																NetState[0] = 1;
-																MMSI[0] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-																break;
-											case 2:
-																NetState[1] = 1;
-																MMSI[1] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-																break;
-											case 3:
-																NetState[2] = 1;
-																MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-																break;
-										}
-									}
+//									else              
+//									{
+//										//判断收到的命令是哪个网位仪的
+//										TIM_Cmd(TIM2,DISABLE);
+//										switch (Usart1buf[7])
+//										{
+//											case 1:
+//																NetState[0] = 1;
+//																MMSI[0] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+//																break;
+//											case 2:
+//																NetState[1] = 1;
+//																MMSI[1] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+//																break;
+//											case 3:
+//																NetState[2] = 1;
+//																MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+//																break;
+//										}
+//									}
 								}
 								break;
 			}
@@ -215,6 +338,10 @@ void Com1GetData()
 void Com1SendData()
 {
 	u8 i;
+	u16 data;
+	data = msg_crc(Usart1buf,16);	//CRC校验数据生成
+	Usart1buf[16] = data>>8;
+ Usart1buf[17] = data;
 	for(i=0;i<18;i++)	
 	{
 		USART_SendData(USART1, Usart1buf[i]);

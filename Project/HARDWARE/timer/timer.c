@@ -54,7 +54,6 @@ void TIM2_IRQHandler(void)
 			}
 			if(FirstReadFlag==0) //不是第一次读取
 			{
-				
 				TIM_Cmd(TIM2,DISABLE);
 			}
 			else  //第一次读取
@@ -92,19 +91,24 @@ void ReadNext(void)
 		ReadOffSet();
 		Usart1Send();
 	}
-	else if(Right_Net) //第三个插上
+	else if(Right_Net && Net_Sel == 2) //第三个插上
 	{
 		Net_Sel++;
 		Usart1buf[7] = Net_Sel;
 		ReadOffSet();
 		Usart1Send();		
 	}
-	
-	if(Net_Sel == 3 && Right_Net) //第三个
+	else if(Net_Sel == 3 && Right_Net) //第三个
 	{
 		Usart1buf[7] = Net_Sel;
 		ReadOffSet();
 		Usart1Send();		
+	}
+	else 
+	{
+		FirstReadFlag = 0;
+		Net_Sel = 0;
+		TIM_Cmd(TIM2,DISABLE);
 	}
   TIM2->CNT = 0;
 }

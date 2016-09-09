@@ -10,6 +10,8 @@
 #include "Usart485.h"
 #include "dectection.h"
 #include "timer.h"
+#include "SogTransport.h"
+
 
 void NVIC_Configuration(void);
 
@@ -30,5 +32,6 @@ extern u32 MMSI[3];
 extern u32 SOG,COG;      
 extern u32 sog_sample_interval;//航速采用间隔
 extern u32 cog_sample_len;     //航向平均化点数
+extern u32 faultCount[3];
 
 #endif
