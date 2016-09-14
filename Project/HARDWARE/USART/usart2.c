@@ -134,7 +134,7 @@ void USART2_IRQHandler(void)
 		
 		if(crcdata == scrData)	
 		Com2GetData();
-		for(i=0;i<18;i++)
+		for(i=0;i<31;i++)
 			Usart2buf[i] = 0;	
 		
 		DMA1_Channel6->CNDTR = UART_LEN;//重装填,并让接收地址偏址从0开始
@@ -158,7 +158,15 @@ void Com2GetData()
 		 {
 				case 0x5a: //T90终端握手命令
 									ConnectDevices = 2; 
-								 replyAsk();
+									if(Reply_flag == 0)
+									{
+										replyAsk();
+									}
+									else
+									{
+										GPSInfoSend(); //上报GPS信息
+									}
+									Reply_flag = 1-Reply_flag;
 				     ReadSog_Cog();
 									break;
 				
@@ -175,13 +183,6 @@ void Com2GetData()
 					   for(i=0;i<18;i++)
 				      Usart1buf[i] = Usart2buf[i];
 				     Usart1Send();
-//									TailOffset = ((Usart2buf[2])<<8)|Usart2buf[3];
-//									location = Usart2buf[4];
-//									LeftRightOffset = ((Usart2buf[5])<<8)|Usart2buf[6];
-//									Net_Sel = Usart2buf[7];
-//				     sog_sample_interval = Usart2buf[8];
-//			     	cog_sample_len = Usart2buf[9];
-//									OpenSerial();
 									break;
 				default:
 					   break;
@@ -203,12 +204,12 @@ void Com2SendData()
 	Usart2_Output;
 	//delay_us(800);
 	delay_ms(1);
-	if(Usart2buf[1]==0x51) //握手命令长度21
+	if(Usart2buf[1]==0x51) //握手命令长度31
 	{	
-	 data = msg_crc(Usart2buf,19);	//CRC校验数据生成
-		Usart2buf[19] = data>>8;
- 	Usart2buf[20] = data;
-		for(i=0;i<21;i++)	
+	 data = msg_crc(Usart2buf,29);	//CRC校验数据生成
+		Usart2buf[29] = data>>8;
+ 	Usart2buf[30] = data;
+		for(i=0;i<31;i++)	
 		{
 			USART_SendData(USART2, Usart2buf[i]);
 			while (!(USART2->SR & USART_FLAG_TXE));
@@ -226,7 +227,7 @@ void Com2SendData()
 		}
 	}
  //BUF清空	
-	for(i=0;i<21;i++)
+	for(i=0;i<32;i++)
 		Usart2buf[i]=0;
 	
 	//delay_us(800);
@@ -279,32 +280,6 @@ void OpenSerial()
 	Usart1buf[7] = Net_Sel;
 	Usart1Send();
 }
-//注入
-//void WriteOffset(void)
-//{
-//	u8 i;
-//	for(i=0;i<18;i++)
-//		Usart1buf[i] = 0;
-//	
-//	Usart1buf[0] = 0x24;
-//	Usart1buf[1] = 0x31;
-//	Usart1buf[2] = TailOffset>>8;
-//	Usart1buf[3] = TailOffset&0xff;
-//	Usart1buf[4] = location;
-//	Usart1buf[5] = LeftRightOffset>>8;
-//	Usart1buf[6] = LeftRightOffset&0xff;
-//	Usart1buf[7] = Net_Sel;
-//	Usart1buf[8] = sog_sample_interval;
-//	Usart1buf[9] = cog_sample_len;
-//	Usart1Send();
-//}
-
-//void WriteOffset()
-//{
-// u8 i;
-// for(i=0;i<18;i++)
-//  Usart1buf[i]=0;	
-//}
 
 
 //读取命令
@@ -335,41 +310,70 @@ void CloseSerial()
 void replyAsk(void)
 {
 	u8 i;
-	for(i=0;i<18;i++)
+	for(i=0;i<31;i++)
 		Usart2buf[i] = 0;
 	
 	Usart2buf[0] = 0x24;
 	Usart2buf[1] = 0x51;
-
-//左舷MMSI
+ Usart2buf[2] = 1;  //上报航速航向，MMSI
+//左舷MMSI 3~6
  for(i=0;i<4;i++)
-		Usart2buf[i+2] = (u8)(MMSI[0]>>(24-i*8)); 
+		Usart2buf[i+3] = (u8)(MMSI[0]>>(24-i*8)); 
 	
-	//网尾MMSIs
+	//网尾MMSIs 7~10
 	for(i=0;i<4;i++)
-		Usart2buf[i+6] = (u8)(MMSI[1]>>(24-i*8));
+		Usart2buf[i+7] = (u8)(MMSI[1]>>(24-i*8));
 
-	//右舷MMSI
+	//右舷MMSI 11~14
 	for(i=0;i<4;i++)
-		Usart2buf[i+10] = (u8)(MMSI[2]>>(24-i*8));
+		Usart2buf[i+11] = (u8)(MMSI[2]>>(24-i*8));
 		
-		//三个T800的状态
+		//三个T800的状态 15
 		if(FirstReadFlag==0)
-			Usart2buf[14] = (NetState[0]<<6)|(NetState[1]<<4)|(NetState[2]<<2);
-		//航速航向
+			Usart2buf[15] = (NetState[0]<<6)|(NetState[1]<<4)|(NetState[2]<<2);
+		//航速航向取中值
 		if(NetState[0]!=0|NetState[1]!=0|NetState[1]!=0)
-			SogSel();
+			mid_value(); 
 		else
 		{
 			SOG = 0;
 		 COG = 0;
 		}
-		Usart2buf[15] = SOG>>8;
-		Usart2buf[16] = SOG;
-		Usart2buf[17] = COG>>8;
-		Usart2buf[18] = COG;
+		Usart2buf[16] = SOG>>8;
+		Usart2buf[17] = SOG;
+		Usart2buf[18] = COG>>8;
+		Usart2buf[19] = COG;
 	 Com2SendData();
 }
+
+//上报GPS信息
+void GPSInfoSend()
+{
+	u8 i;
+	for(i=0;i<31;i++)
+		Usart2buf[i] = 0;
+	Usart2buf[0] = 0x24;
+	Usart2buf[1] = 0x51;
+ Usart2buf[2] = 2;  //上报GPS信息
+ GPS_invalid();
+	
+	Usart2buf[3] = EW;
+	for(i=0;i<4;i++)
+		Usart2buf[i+4] = longitude>>(24 - i*8); //经度4~7
+	
+	Usart2buf[8] = NS;
+	for(i=0;i<4;i++)
+		Usart2buf[i+9] = latitude>>(24 - i*8); //纬度 9~12
+	
+	for(i=0;i<4;i++)
+	 Usart2buf[i+13] = UTCTime>>(24 - i*8); //UTC 时间 13~16
+	
+	for(i=0;i<4;i++)
+	 Usart2buf[i+17] = UTCDate>>(24 - i*8); //UTC 日期17~20
+	
+	Com2SendData();
+}
+
 
 //读取航速航向信息，如果有三次没收到串口的应答，则判断该网位仪故障
 //故障网位仪每个三秒进行一次读取判断，收到应答则判断该网位仪正常
@@ -383,7 +387,25 @@ void ReadSog_Cog(void)
 		Usart1buf[i]=0;
 	}
 	
- if(Left_Net)
+		NetStatejudge();
+}
+
+void Read_GPSInfo()
+{
+		u8 i;
+	Usart1buf[0] = 0x24;
+ Usart1buf[1] = 0x07;
+	for(i=2;i<18;i++)
+	{
+		Usart1buf[i]=0;
+	}
+	NetStatejudge();
+}
+
+//判断T800插入状态然后选择读取
+void NetStatejudge()
+{
+	 if(Left_Net)
 	{
 	 if(NetState[0]==1 | faultCount[0]==3)
 	 {
@@ -436,5 +458,82 @@ void ReadSog_Cog(void)
 		{
 			faultCount[2]++;
 		}
-	}		
+	}
+}
+
+void GPS_invalid()
+{
+		
+	if(NetState[0]==1) //左舷正常
+	{
+		if(GPS.longitude[0]!=0)
+		{
+			EW = GPS.EW[0];
+			longitude = GPS.longitude[0];
+			NS = GPS.NS[0];
+			latitude = GPS.latitude[0];
+			UTCTime = GPS.UTCTime[0];
+			UTCDate = GPS.UTCDate[0];
+		}
+		else if(NetState[1]==1)
+		{
+				if(GPS.longitude[1]!=0)
+				{
+					EW = GPS.EW[1];
+					longitude = GPS.longitude[1];
+					NS = GPS.NS[1];
+					latitude = GPS.latitude[1];
+					UTCTime = GPS.UTCTime[1];
+					UTCDate = GPS.UTCDate[1];
+				}
+				else if(NetState[2]==1)
+				{
+					if(GPS.longitude[2]!=0)
+					{
+						EW = GPS.EW[2];
+						longitude = GPS.longitude[2];
+						NS = GPS.NS[2];
+						latitude = GPS.latitude[2];
+						UTCTime = GPS.UTCTime[2];
+						UTCDate = GPS.UTCDate[2];
+					}
+				}
+		}
+	}
+	else if(NetState[1]==1) //右舷正常
+	{
+			if(GPS.longitude[1]!=0)
+			{
+				EW = GPS.EW[1];
+				longitude = GPS.longitude[1];
+				NS = GPS.NS[1];
+				latitude = GPS.latitude[1];
+				UTCTime = GPS.UTCTime[1];
+				UTCDate = GPS.UTCDate[1];
+			}
+			else if(NetState[2]==1)
+			{
+				if(GPS.longitude[2]!=0)
+				{
+					EW = GPS.EW[2];
+					longitude = GPS.longitude[2];
+					NS = GPS.NS[2];
+					latitude = GPS.latitude[2];
+					UTCTime = GPS.UTCTime[2];
+					UTCDate = GPS.UTCDate[2];
+				}
+			}
+	}
+	else if(NetState[2]==1) //网尾
+	{
+		if(GPS.longitude[2]!=0)
+		{
+			EW = GPS.EW[2];
+			longitude = GPS.longitude[2];
+			NS = GPS.NS[2];
+			latitude = GPS.latitude[2];
+			UTCTime = GPS.UTCTime[2];
+			UTCDate = GPS.UTCDate[2];
+		}
+	}
 }

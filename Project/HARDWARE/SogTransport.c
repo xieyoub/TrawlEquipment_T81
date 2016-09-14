@@ -4,7 +4,7 @@ u32 SogData[3]={0};
 u32 CogData[3]={0};
 
 //三个网位仪则取中值，两个网位仪取小的
-void SogSel()
+void mid_value()
 {
 	//SOG
 if(NetState[0]==1&&NetState[1]==1&&NetState[2]==1) //三个全部都OK
@@ -48,9 +48,13 @@ if(NetState[0]==1&&NetState[1]==1&&NetState[2]==1) //三个全部都OK
 				if(SogData[0]>SogData[2])
 				{
 					if(SogData[1]>SogData[2])
+					{
 						SOG = SogData[1];
+					}
 					else
+					{
 						SOG = SogData[2];
+					}
 				}
 				else
 				{
@@ -60,9 +64,13 @@ if(NetState[0]==1&&NetState[1]==1&&NetState[2]==1) //三个全部都OK
 			else if(SogData[1]>SogData[2])
 			{
 				if(SogData[0]>SogData[2])
+				{
 					SOG = SogData[0];
+				}
 				else 
+				{
 					SOG = SogData[2];
+				}
 			}
 			else
 			{
@@ -77,16 +85,24 @@ if(NetState[0]==1&&NetState[1]==1&&NetState[2]==1) //三个全部都OK
 			if(NetState[1]==1&&NetState[2]==1)
 			{
 				if(SogData[1]>SogData[2])
+				{
 					SOG = SogData[2];
+				}
 				else
+				{
 					SOG = SogData[1];
+				}
 			}
 			else
 			{
 				if(NetState[1]==1)
+				{
 					SOG=SogData[1];
+				}
 				else
+				{
 					SOG = SogData[2];
+				}
 			}
 		}
 		else if(NetState[1]!=1)
@@ -94,19 +110,29 @@ if(NetState[0]==1&&NetState[1]==1&&NetState[2]==1) //三个全部都OK
 			if(NetState[2]==1)
 			{
 				if(SogData[0]>SogData[2])
+				{
 					SOG = SogData[2];
+				}
 				else
+				{
 					SOG = SogData[0];
+				}
 			}
 			else
+			{
 				SOG = SogData[0];
+			}
 		}
 		else if(NetState[2]!=1)
 		{
 			if(SogData[0]>SogData[1])
+			{
 				SOG = SogData[1];
+			}
 			else
+			{
 				SOG = SogData[1];
+			}
 		}
 	}
 	

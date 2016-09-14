@@ -12,5 +12,5 @@ void Com1SendData(void);
 u16 msg_crc(u8 *ptr,u8 num);
 void ReadInit(void);
 void FirstRead(void);
-
+void T800Info(int flag);
 #endif

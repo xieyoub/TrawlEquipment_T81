@@ -17,7 +17,7 @@ void USART1_DMA_Configuration()
 	DMA_InitStructure.DMA_PeripheralBaseAddr = (u32)(&USART1->DR);//外设地址  
 	DMA_InitStructure.DMA_MemoryBaseAddr = (uint32_t)Usart1buf;     //内存地址  
 	DMA_InitStructure.DMA_DIR = DMA_DIR_PeripheralSRC;            //dma传输方向从外设到内存 
-	DMA_InitStructure.DMA_BufferSize = 20;               //设置DMA在传输时缓冲区的长度  
+	DMA_InitStructure.DMA_BufferSize = UART_LEN;               //设置DMA在传输时缓冲区的长度  
 	DMA_InitStructure.DMA_PeripheralInc = DMA_PeripheralInc_Disable;//设置DMA的外设地址不变 
 	DMA_InitStructure.DMA_MemoryInc = DMA_MemoryInc_Enable;      //设置DMA的内存递增模式  
 	DMA_InitStructure.DMA_PeripheralDataSize = DMA_PeripheralDataSize_Byte;//外设数据字长 8位
@@ -123,15 +123,22 @@ void USART1_IRQHandler(void)
 		Length = USART1->SR;  
 		Length = USART1->DR; //清USART_IT_IDLE标志
 		
-		scrData = (Usart1buf[16]<<8)+Usart1buf[17];
-		crcdata = msg_crc(Usart1buf,16); //数据校验
-		
+		if(Usart1buf[1]==0x06)//GPS信息
+		{
+				scrData = (Usart1buf[30]<<8)+Usart1buf[31];
+				crcdata = msg_crc(Usart1buf,30); //数据校验
+		}
+		else
+		{
+			scrData = (Usart1buf[16]<<8)+Usart1buf[17];
+			crcdata = msg_crc(Usart1buf,16); //数据校验
+		}
 		if(scrData == crcdata)
 			Com1GetData();
-		for(i=0;i<18;i++)
-				Usart1buf[i] = 0;
 		
-		DMA1_Channel5->CNDTR = 20;//重装填,并让接收地址偏址从0开始
+		DMA1_Channel5->CNDTR = UART_LEN;//重装填,并让接收地址偏址从0开始
+		for(i=0;i<UART_LEN;i++)
+				Usart1buf[i] = 0;
 		DMA_Cmd(DMA1_Channel5, ENABLE);//处理完,重开DMA   
 		
 		//USART_ClearITPendingBit(USART1,USART_IT_IDLE);
@@ -186,19 +193,16 @@ void Com1GetData()
 		{
 			switch (Usart1buf[1])
 			{
-					case 0x06: //航速航向
+					case 0x06: //航速航向,GPS信息
 						    switch(Usart1buf[7])
 										{
 											case 1:
 																NetState[0] = 1;
 																faultCount[0] = 0;
-																SogData[0] = Usart1buf[2]<<8|Usart1buf[3];
-																CogData[0] = Usart1buf[4]<<8|Usart1buf[5];
-											     MMSI[0] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+																T800Info(0);
+										
 																Usart1buf[0] = 0x24;
 																Usart1buf[1] = 0x06;
-																
-											      
 											      //收到左舷回复，请求网尾航速航向
 																if(Tail_Net)
 																{
@@ -241,9 +245,8 @@ void Com1GetData()
 											 case 2:
 																	NetState[1] = 1;
 																	faultCount[1] = 0;
-																	SogData[1] = Usart1buf[2]<<8|Usart1buf[3];
-																	CogData[1] = Usart1buf[4]<<8|Usart1buf[5];
-																	MMSI[1] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+																	T800Info(1);//将GPS等信息保存
+												
 																	Usart1buf[0] = 0x24;
 																	Usart1buf[1] = 0x06;
 																	
@@ -271,10 +274,8 @@ void Com1GetData()
 											
 											case 3:
 													  	NetState[2] = 1;
-												      faultCount[2] = 0;
-													  	SogData[2] = Usart1buf[2]<<8|Usart1buf[3];
-													  	CogData[2] = Usart1buf[4]<<8|Usart1buf[5];
-											     MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
+												    faultCount[2] = 0;
+													  	T800Info(2);
 												    break;
 										}
 						    break;
@@ -303,26 +304,6 @@ void Com1GetData()
 									{
 										FirstRead();
 									}
-//									else              
-//									{
-//										//判断收到的命令是哪个网位仪的
-//										TIM_Cmd(TIM2,DISABLE);
-//										switch (Usart1buf[7])
-//										{
-//											case 1:
-//																NetState[0] = 1;
-//																MMSI[0] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-//																break;
-//											case 2:
-//																NetState[1] = 1;
-//																MMSI[1] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-//																break;
-//											case 3:
-//																NetState[2] = 1;
-//																MMSI[2] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11];
-//																break;
-//										}
-//									}
 								}
 								break;
 			}
@@ -488,3 +469,16 @@ void FirstRead()
 		}
 }
 
+//T800上报的信息(经纬度，时间，航速航向)
+void T800Info(int flag)
+{
+	SogData[flag] = Usart1buf[2]<<8|Usart1buf[3]; //航速
+	CogData[flag] = Usart1buf[4]<<8|Usart1buf[5];	//航向
+	MMSI[flag] = Usart1buf[8]<<24 | Usart1buf[9]<<16 | Usart1buf[10]<<8 | Usart1buf[11]; //MMSI
+	GPS.EW[flag] = Usart1buf[12];
+	GPS.longitude[flag] = Usart1buf[13]<<24 | Usart1buf[14]<<16 | Usart1buf[15]<<8 |Usart1buf[16];	//经度
+	GPS.NS[flag] = Usart1buf[17];
+	GPS.latitude[flag] = Usart1buf[18]<<24 | Usart1buf[19]<<16 | Usart1buf[20]<<8 | Usart1buf[21];	//纬度
+	GPS.UTCTime[flag] = Usart1buf[22]<<24 | Usart1buf[23]<<16 | Usart1buf[24]<<8 | Usart1buf[25];		//UTC时间
+	GPS.UTCDate[flag] = Usart1buf[26]<<24 | Usart1buf[27]<<16 | Usart1buf[28]<<8 | Usart1buf[29];		//UTC日期
+}

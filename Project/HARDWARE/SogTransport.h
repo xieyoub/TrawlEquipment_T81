@@ -5,6 +5,6 @@
 
 extern u32 SogData[3];
 extern u32 CogData[3];
-void SogSel(void);
+void mid_value(void);
 
 #endif
