@@ -18,6 +18,5 @@ void WriteOffset(void);
 void ReadSog_Cog(void);
 void NetStatejudge(void);
 void GPSInfoSend(void);
-void GPS_invalid(void);
 
 #endif

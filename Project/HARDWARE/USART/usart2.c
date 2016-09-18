@@ -331,14 +331,9 @@ void replyAsk(void)
 		//三个T800的状态 15
 		if(FirstReadFlag==0)
 			Usart2buf[15] = (NetState[0]<<6)|(NetState[1]<<4)|(NetState[2]<<2);
-		//航速航向取中值
-		if(NetState[0]!=0|NetState[1]!=0|NetState[1]!=0)
-			mid_value(); 
-		else
-		{
-			SOG = 0;
-		 COG = 0;
-		}
+		//航速航向取有效值
+		SOG_COG_Judge(); 
+		
 		Usart2buf[16] = SOG>>8;
 		Usart2buf[17] = SOG;
 		Usart2buf[18] = COG>>8;
@@ -355,7 +350,7 @@ void GPSInfoSend()
 	Usart2buf[0] = 0x24;
 	Usart2buf[1] = 0x51;
  Usart2buf[2] = 2;  //上报GPS信息
- GPS_invalid();
+ GPS_Judge();
 	
 	Usart2buf[3] = EW;
 	for(i=0;i<4;i++)
@@ -388,18 +383,6 @@ void ReadSog_Cog(void)
 	}
 	
 		NetStatejudge();
-}
-
-void Read_GPSInfo()
-{
-		u8 i;
-	Usart1buf[0] = 0x24;
- Usart1buf[1] = 0x07;
-	for(i=2;i<18;i++)
-	{
-		Usart1buf[i]=0;
-	}
-	NetStatejudge();
 }
 
 //判断T800插入状态然后选择读取
@@ -457,83 +440,6 @@ void NetStatejudge()
 		else if(faultCount[2]<3)
 		{
 			faultCount[2]++;
-		}
-	}
-}
-
-void GPS_invalid()
-{
-		
-	if(NetState[0]==1) //左舷正常
-	{
-		if(GPS.longitude[0]!=0)
-		{
-			EW = GPS.EW[0];
-			longitude = GPS.longitude[0];
-			NS = GPS.NS[0];
-			latitude = GPS.latitude[0];
-			UTCTime = GPS.UTCTime[0];
-			UTCDate = GPS.UTCDate[0];
-		}
-		else if(NetState[1]==1)
-		{
-				if(GPS.longitude[1]!=0)
-				{
-					EW = GPS.EW[1];
-					longitude = GPS.longitude[1];
-					NS = GPS.NS[1];
-					latitude = GPS.latitude[1];
-					UTCTime = GPS.UTCTime[1];
-					UTCDate = GPS.UTCDate[1];
-				}
-				else if(NetState[2]==1)
-				{
-					if(GPS.longitude[2]!=0)
-					{
-						EW = GPS.EW[2];
-						longitude = GPS.longitude[2];
-						NS = GPS.NS[2];
-						latitude = GPS.latitude[2];
-						UTCTime = GPS.UTCTime[2];
-						UTCDate = GPS.UTCDate[2];
-					}
-				}
-		}
-	}
-	else if(NetState[1]==1) //右舷正常
-	{
-			if(GPS.longitude[1]!=0)
-			{
-				EW = GPS.EW[1];
-				longitude = GPS.longitude[1];
-				NS = GPS.NS[1];
-				latitude = GPS.latitude[1];
-				UTCTime = GPS.UTCTime[1];
-				UTCDate = GPS.UTCDate[1];
-			}
-			else if(NetState[2]==1)
-			{
-				if(GPS.longitude[2]!=0)
-				{
-					EW = GPS.EW[2];
-					longitude = GPS.longitude[2];
-					NS = GPS.NS[2];
-					latitude = GPS.latitude[2];
-					UTCTime = GPS.UTCTime[2];
-					UTCDate = GPS.UTCDate[2];
-				}
-			}
-	}
-	else if(NetState[2]==1) //网尾
-	{
-		if(GPS.longitude[2]!=0)
-		{
-			EW = GPS.EW[2];
-			longitude = GPS.longitude[2];
-			NS = GPS.NS[2];
-			latitude = GPS.latitude[2];
-			UTCTime = GPS.UTCTime[2];
-			UTCDate = GPS.UTCDate[2];
 		}
 	}
 }

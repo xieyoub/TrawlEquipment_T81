@@ -5,6 +5,6 @@
 
 extern u32 SogData[3];
 extern u32 CogData[3];
-void mid_value(void);
-
+void SOG_COG_Judge(void);
+void GPS_Judge(void);
 #endif
