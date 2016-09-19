@@ -27,6 +27,7 @@ int main(void)
 	NVIC_PriorityGroupConfig(NVIC_PriorityGroup_2);
 	Usart1_Init();//与T800通信
 	Usart2_Init();//与T88通信
+	//Usart3_Init(9600);
 	time2_init();
 	Switch_Init(); 
 	T800Dectect(); // 检测T800IO配置

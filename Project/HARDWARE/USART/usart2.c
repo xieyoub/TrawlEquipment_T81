@@ -1,4 +1,5 @@
 #include "usart2.h"
+#include "stdio.h"
 
 /***********************************************************
  * 函数名: USART2_DMA_Configuration
@@ -332,13 +333,18 @@ void replyAsk(void)
 		if(FirstReadFlag==0)
 			Usart2buf[15] = (NetState[0]<<6)|(NetState[1]<<4)|(NetState[2]<<2);
 		//航速航向取有效值
-		SOG_COG_Judge(); 
+		GPSInfo_Judge(); 
 		
 		Usart2buf[16] = SOG>>8;
 		Usart2buf[17] = SOG;
 		Usart2buf[18] = COG>>8;
 		Usart2buf[19] = COG;
 	 Com2SendData();
+		
+		//TEST
+		{
+			//printf("sog1 = %d,  sog2 = %d,  sog3 = %d,    SOG = %d\n",SogData[0],SogData[1],SogData[2],SOG);
+		}
 }
 
 //上报GPS信息
@@ -350,7 +356,6 @@ void GPSInfoSend()
 	Usart2buf[0] = 0x24;
 	Usart2buf[1] = 0x51;
  Usart2buf[2] = 2;  //上报GPS信息
- GPS_Judge();
 	
 	Usart2buf[3] = EW;
 	for(i=0;i<4;i++)

@@ -1,4 +1,6 @@
 #include "usart3.h"
+#include "stm32f10x.h"
+#include "stdio.h"
 
 void Usart3_Init(u16 bound)
 {
@@ -29,4 +31,11 @@ void Usart3_Init(u16 bound)
 	
 	USART_Init(USART3,&USART_InitStructure);
 	USART_Cmd(USART3, ENABLE);	
+}
+
+int fputc(int ch, FILE *f)
+{
+	USART_SendData(USART3, (uint8_t) ch);
+	while (USART_GetFlagStatus(USART3, USART_FLAG_TC) == RESET) {}	 
+  return ch;
 }
